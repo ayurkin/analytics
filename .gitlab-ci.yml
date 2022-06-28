@@ -1,2 +1,8 @@
 include:
   remote: 'https://gitlab.com/mts-teta-public/devops-tools/-/raw/master/.gitlab-ci-main.yml'
+
+deploy:
+  variables:
+    HELM_TEMPLATE: https://gitlab.com/g6834/team3/devops-tools/-/raw/main/main-0.1.0.tgz
+
+
