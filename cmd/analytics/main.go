@@ -5,6 +5,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,8 +16,10 @@ import (
 func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	authGrpcAddr := os.Getenv("AUTH_ADDR")
+	log.Println("authGrpcAddr: " + authGrpcAddr)
 
-	conn, err := grpc.Dial("auth.team3.svc.cluster.local:4000", grpc.WithInsecure())
+	conn, err := grpc.Dial(authGrpcAddr, grpc.WithInsecure())
 
 	if err != nil {
 		log.Println(err)

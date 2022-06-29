@@ -3,6 +3,6 @@ include:
 
 deploy:
   variables:
-    HELM_TEMPLATE: $CI_PROJECT_DIR/main-0.1.0.tgz
+    HELM_TEMPLATE: $CI_PROJECT_DIR/deploy/helm-chart
 
 

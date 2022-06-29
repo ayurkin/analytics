@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.applicationName }}
+  namespace: {{ .Release.Namespace }}
+data:
+  auth_addr: "auth.team3.svc.cluster.local:4000"
