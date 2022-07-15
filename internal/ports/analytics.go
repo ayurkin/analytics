@@ -5,7 +5,7 @@ import (
 	"context"
 )
 
-type AnalyticsStoragePort interface {
+type AnalyticsPort interface {
 	CreateTask(ctx context.Context, event models.Event) error
 	AddMail(ctx context.Context, event models.Event) error
 	AddApproveClick(ctx context.Context, event models.Event) error

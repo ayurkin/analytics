@@ -8,10 +8,10 @@ import (
 )
 
 type Service struct {
-	db ports.AnalyticsStorage
+	db ports.AnalyticsStoragePort
 }
 
-func New(db ports.AnalyticsStorage) *Service {
+func New(db ports.AnalyticsStoragePort) *Service {
 	return &Service{
 		db: db,
 	}

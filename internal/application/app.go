@@ -1,6 +1,7 @@
 package application
 
 import (
+	grpc_events_receiver "analytics/internal/adapters/grpc/events_receiver"
 	"analytics/internal/adapters/postgres"
 	"analytics/internal/domain/analytics"
 	"context"
@@ -41,6 +42,13 @@ func Start(ctx context.Context) {
 		logger.Sugar().Fatalf("cannot get rejectedTasksCount: %s", err)
 	}
 	logger.Sugar().Infof("rejectedTasksCount: %d", rejectedTasksCount)
+
+	grpcEventsReceiver := grpc_events_receiver.New(analyticsS)
+	err = grpcEventsReceiver.Start()
+
+	if err != nil {
+		logger.Sugar().Fatalf("cannot start grpcEventsReceiver: %s", err)
+	}
 
 	logger.Sugar().Info("app has started")
 }
