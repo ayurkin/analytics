@@ -13,12 +13,12 @@ type Database struct {
 func New(ctx context.Context, pgconn string) (*Database, error) {
 	config, err := pgxpool.ParseConfig(pgconn)
 	if err != nil {
-		return nil, fmt.Errorf("postgres connection string parse failed: %w", err)
+		return nil, fmt.Errorf("postgres connection string parse failed: %v", err)
 	}
 
 	pool, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
-		return nil, fmt.Errorf("create pool failed: %w", err)
+		return nil, fmt.Errorf("create pool failed: %v", err)
 	}
 
 	return &Database{DB: pool}, nil

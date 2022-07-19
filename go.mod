@@ -3,6 +3,7 @@ module analytics
 go 1.17
 
 require (
+	github.com/go-chi/chi v1.5.4
 	github.com/jackc/pgx/v4 v4.16.1
 	github.com/sanyokbig/pqinterval v1.1.2
 	go.uber.org/zap v1.21.0

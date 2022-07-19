@@ -1,15 +1,21 @@
 package application
 
 import (
+	auth_grpc_client "analytics/internal/adapters/grpc/auth"
 	grpc_events_receiver "analytics/internal/adapters/grpc/events_receiver"
+	"analytics/internal/adapters/http"
 	"analytics/internal/adapters/postgres"
 	"analytics/internal/domain/analytics"
+	"analytics/internal/domain/auth"
 	"context"
 	"go.uber.org/zap"
+	"time"
 )
 
 var (
-	logger *zap.Logger
+	logger             *zap.Logger
+	httpServer         *http.Server
+	grpcEventsReceiver *grpc_events_receiver.EventWriterServer
 )
 
 func Start(ctx context.Context) {
@@ -19,40 +25,45 @@ func Start(ctx context.Context) {
 
 	db, err := postgres.New(ctx, pgconn)
 	if err != nil {
-		logger.Sugar().Fatalf("db init failed: %s", err)
+		logger.Sugar().Fatalf("db init failed: %v", err)
 	}
 
 	analyticsS := analytics.New(db)
 
-	totalTime, err := analyticsS.GetTotalTaskResponseTime(ctx, 321)
+	grpcTarget := "auth.team3.svc.cluster.local:9000"
+	authGrpcClient, err := auth_grpc_client.New(grpcTarget)
 	if err != nil {
-		logger.Sugar().Fatalf("cannot get total time: %s", err)
-	}
-	logger.Sugar().Infof("totalTime: %s", totalTime)
-
-	approvedTasksCount, err := analyticsS.GetApprovedTasksCount(ctx)
-	if err != nil {
-		logger.Sugar().Fatalf("cannot get approvedTasksCount: %s", err)
+		logger.Sugar().Fatalf("auth grpc client init failed: %v", err)
 	}
 
-	logger.Sugar().Infof("approvedTasksCount: %d", approvedTasksCount)
+	authS := auth.New(authGrpcClient)
 
-	rejectedTasksCount, err := analyticsS.GetRejectedTasksCount(ctx)
-	if err != nil {
-		logger.Sugar().Fatalf("cannot get rejectedTasksCount: %s", err)
-	}
-	logger.Sugar().Infof("rejectedTasksCount: %d", rejectedTasksCount)
+	httpServer = http.New(analyticsS, authS, logger.Sugar())
 
-	grpcEventsReceiver := grpc_events_receiver.New(analyticsS)
-	err = grpcEventsReceiver.Start()
+	grpcEventsReceiver = grpc_events_receiver.New(analyticsS)
 
-	if err != nil {
-		logger.Sugar().Fatalf("cannot start grpcEventsReceiver: %s", err)
-	}
+	go func() {
+		err := grpcEventsReceiver.Start()
+		if err != nil {
+			logger.Sugar().Fatalf("grpc events receiver failed: %v", err)
+		}
+	}()
 
-	logger.Sugar().Info("app has started")
+	go func() {
+		err := httpServer.Start()
+		if err != nil {
+			logger.Sugar().Fatalf("http server failed: %v", err)
+		}
+	}()
+
+	logger.Sugar().Info("application has started")
+
 }
 
 func Stop() {
+	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdown()
+	_ = httpServer.Stop(ctx)
+	grpcEventsReceiver.Stop()
 	logger.Sugar().Info("app has stopped")
 }

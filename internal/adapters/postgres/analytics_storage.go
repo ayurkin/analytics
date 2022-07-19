@@ -17,7 +17,7 @@ type Datapoint struct {
 func (db *Database) CreateTask(ctx context.Context, event models.Event) error {
 	tx, err := db.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("begin tx failed: %w", err)
+		return fmt.Errorf("begin tx failed: %v", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -28,7 +28,7 @@ func (db *Database) CreateTask(ctx context.Context, event models.Event) error {
 		event.TaskId, event.Time, event.Type, event.User, event.ApproversNumber)
 
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 	_, err = tx.Exec(ctx,
 		`INSERT INTO analytics.task
@@ -37,11 +37,11 @@ func (db *Database) CreateTask(ctx context.Context, event models.Event) error {
 				($1, 'created', $2, null, '0 years 0 mons 0 days 0 hours 0 mins 0.0 secs', $3, 0)`,
 		event.TaskId, event.Time, event.ApproversNumber)
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return fmt.Errorf("tx commit failed failed: %w", err)
+		return fmt.Errorf("tx commit failed failed: %v", err)
 	}
 	return nil
 }
@@ -49,7 +49,7 @@ func (db *Database) CreateTask(ctx context.Context, event models.Event) error {
 func (db *Database) AddMail(ctx context.Context, event models.Event) error {
 	tx, err := db.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("begin tx failed: %w", err)
+		return fmt.Errorf("begin tx failed: %v", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -60,7 +60,7 @@ func (db *Database) AddMail(ctx context.Context, event models.Event) error {
 		event.TaskId, event.Time, event.Type, event.User, event.ApproversNumber)
 
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 	_, err = tx.Exec(ctx,
 		`UPDATE analytics.task
@@ -71,11 +71,11 @@ func (db *Database) AddMail(ctx context.Context, event models.Event) error {
 		event.TaskId, event.Time)
 
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return fmt.Errorf("tx commit failed failed: %w", err)
+		return fmt.Errorf("tx commit failed failed: %v", err)
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func (db *Database) AddMail(ctx context.Context, event models.Event) error {
 func (db *Database) AddApproveClick(ctx context.Context, event models.Event) error {
 	tx, err := db.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("begin tx failed: %w", err)
+		return fmt.Errorf("begin tx failed: %v", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -94,7 +94,7 @@ func (db *Database) AddApproveClick(ctx context.Context, event models.Event) err
 		event.TaskId, event.Time, event.Type, event.User, event.ApproversNumber)
 
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 	_, err = tx.Exec(ctx,
 		`UPDATE analytics.task
@@ -108,11 +108,11 @@ func (db *Database) AddApproveClick(ctx context.Context, event models.Event) err
 			 WHERE id = $1`,
 		event.TaskId, event.Time)
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return fmt.Errorf("tx commit failed failed: %w", err)
+		return fmt.Errorf("tx commit failed failed: %v", err)
 	}
 	return nil
 }
@@ -120,7 +120,7 @@ func (db *Database) AddApproveClick(ctx context.Context, event models.Event) err
 func (db *Database) AddRejectClick(ctx context.Context, event models.Event) error {
 	tx, err := db.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("begin tx failed: %w", err)
+		return fmt.Errorf("begin tx failed: %v", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -131,7 +131,7 @@ func (db *Database) AddRejectClick(ctx context.Context, event models.Event) erro
 		event.TaskId, event.Time, event.Type, event.User, event.ApproversNumber)
 
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 	_, err = tx.Exec(ctx,
 		`UPDATE analytics.task
@@ -142,11 +142,11 @@ func (db *Database) AddRejectClick(ctx context.Context, event models.Event) erro
 			 WHERE id = $1`,
 		event.TaskId, event.Time)
 	if err != nil {
-		return fmt.Errorf("query exec failed: %w", err)
+		return fmt.Errorf("query exec failed: %v", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return fmt.Errorf("tx commit failed failed: %w", err)
+		return fmt.Errorf("tx commit failed failed: %v", err)
 	}
 	return nil
 }
@@ -157,21 +157,21 @@ func (db *Database) GetTotalTaskResponseTime(ctx context.Context, taskId int32) 
 
 	rows, err := db.DB.Query(ctx, "SELECT total_time FROM analytics.task WHERE task.id = $1", taskId)
 	if err != nil {
-		return "", fmt.Errorf("query exec failed: %w", err)
+		return "", fmt.Errorf("query exec failed: %v", err)
 	}
 
 	if !rows.Next() {
-		return "", errors.New("not found")
+		return "", errors.New(fmt.Sprintf("not found task %d", taskId))
 	}
 
 	err = rows.Scan(&ival)
 	if err != nil {
-		return "", fmt.Errorf("scan exec failed: %w", err)
+		return "", fmt.Errorf("scan exec failed: %v", err)
 	}
 
 	ivalValue, err := ival.Value()
 	if err != nil {
-		return "", fmt.Errorf("execute interval value failed: %w", err)
+		return "", fmt.Errorf("execute interval value failed: %v", err)
 	}
 	totalTaskResponseTime = fmt.Sprint(ivalValue)
 	return totalTaskResponseTime, nil
@@ -182,16 +182,16 @@ func (db *Database) GetApprovedTasksCount(ctx context.Context) (int32, error) {
 
 	rows, err := db.DB.Query(ctx, "SELECT count(id) FROM analytics.task WHERE status = 'approved'")
 	if err != nil {
-		return -1, fmt.Errorf("query exec failed: %w", err)
+		return -1, fmt.Errorf("query exec failed: %v", err)
 	}
 
 	if !rows.Next() {
-		return -1, errors.New("not found")
+		return -1, errors.New("not found approved tasks")
 	}
 
 	err = rows.Scan(&approvedTasksCount)
 	if err != nil {
-		return -1, fmt.Errorf("scan exec failed: %w", err)
+		return -1, fmt.Errorf("scan exec failed: %v", err)
 	}
 
 	return approvedTasksCount, nil
@@ -203,16 +203,16 @@ func (db *Database) GetRejectedTasksCount(ctx context.Context) (int32, error) {
 	rows, err := db.DB.Query(ctx,
 		"SELECT count(id) FROM analytics.task WHERE status IN ('created', 'waiting_response', 'response_received', 'rejected')")
 	if err != nil {
-		return -1, fmt.Errorf("query exec failed: %w", err)
+		return -1, fmt.Errorf("query exec failed: %v", err)
 	}
 
 	if !rows.Next() {
-		return -1, errors.New("not found")
+		return -1, errors.New("not found rejected tasks")
 	}
 
 	err = rows.Scan(&rejectedTasksCount)
 	if err != nil {
-		return -1, fmt.Errorf("scan exec failed: %w", err)
+		return -1, fmt.Errorf("scan exec failed: %v", err)
 	}
 
 	return rejectedTasksCount, nil

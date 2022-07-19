@@ -13,6 +13,8 @@ type EventWriterServer struct {
 	epb.UnimplementedEventWriterServer
 }
 
+var grpcServer *grpc.Server
+
 func New(analytics ports.AnalyticsPort) *EventWriterServer {
 	return &EventWriterServer{analytics: analytics}
 }
@@ -24,7 +26,7 @@ func (s *EventWriterServer) Start() error {
 	}
 
 	eventWriterServer := s
-	grpcServer := grpc.NewServer()
+	grpcServer = grpc.NewServer()
 	epb.RegisterEventWriterServer(grpcServer, eventWriterServer)
 
 	if err := grpcServer.Serve(listen); err != nil {
@@ -32,4 +34,8 @@ func (s *EventWriterServer) Start() error {
 	}
 
 	return nil
+}
+
+func (s *EventWriterServer) Stop() {
+	grpcServer.GracefulStop()
 }
