@@ -56,3 +56,9 @@ docs:
 		--generalInfo swagger.go \
 		--output ./api/swagger/public \
 		--parseDepth 1
+
+tests/integration/analytics/approve:
+	go test -v -tags=approve ./internal/tests/
+
+tests/integration/analytics/reject:
+	go test -v -tags=reject ./internal/tests/
