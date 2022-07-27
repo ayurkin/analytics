@@ -3,6 +3,7 @@ package ports
 import (
 	"analytics/internal/domain/models"
 	"context"
+	"github.com/google/uuid"
 )
 
 type AnalyticsStoragePort interface {
@@ -12,4 +13,5 @@ type AnalyticsStoragePort interface {
 	AddRejectClick(ctx context.Context, event models.Event) error
 	GetTotalTaskResponseTime(ctx context.Context, taskId int32) (string, error)
 	GetTasksCount(ctx context.Context, taskType string) (int32, error)
+	CheckIdempotency(ctx context.Context, uuid uuid.UUID) (bool, error)
 }

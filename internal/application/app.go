@@ -2,8 +2,8 @@ package application
 
 import (
 	auth_grpc_client "analytics/internal/adapters/grpc/auth"
-	grpc_events_receiver "analytics/internal/adapters/grpc/events_receiver"
 	"analytics/internal/adapters/http"
+	"analytics/internal/adapters/kafka/events_receiver"
 	"analytics/internal/adapters/postgres"
 	"analytics/internal/domain/analytics"
 	"analytics/internal/domain/auth"
@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	logger             *zap.Logger
-	httpServer         *http.Server
-	grpcEventsReceiver *grpc_events_receiver.EventWriterServer
+	logger              *zap.Logger
+	quitCh              chan struct{}
+	kafkaEventsReceiver *events_receiver.Client
+	httpServer          *http.Server
 )
 
 func Start(ctx context.Context) {
@@ -40,15 +41,12 @@ func Start(ctx context.Context) {
 
 	httpServer = http.New(analyticsS, authS, logger.Sugar())
 
-	grpcEventsReceiver = grpc_events_receiver.New(analyticsS)
+	kafkaEventsReceiver = events_receiver.New(analyticsS, logger.Sugar())
 
+	quitCh = make(chan struct{})
 	go func() {
-		err := grpcEventsReceiver.Start()
-		if err != nil {
-			logger.Sugar().Fatalf("grpc events receiver failed: %v", err)
-		}
+		kafkaEventsReceiver.Start(quitCh)
 	}()
-
 	go func() {
 		err := httpServer.Start()
 		if err != nil {
@@ -67,6 +65,6 @@ func Stop() {
 	if err != nil {
 		logger.Sugar().Errorf("stop http server failed: %v", err)
 	}
-	grpcEventsReceiver.Stop()
+	kafkaEventsReceiver.Stop(quitCh)
 	logger.Sugar().Info("app has stopped")
 }

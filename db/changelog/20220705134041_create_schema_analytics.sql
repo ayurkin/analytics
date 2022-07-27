@@ -1,3 +1,3 @@
 -- +goose Up
 
-create schema analytics;
+CREATE SCHEMA IF NOT EXISTS analytics;
