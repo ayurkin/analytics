@@ -23,7 +23,7 @@ func (s *EventWriterServer) WriteEvent(ctx context.Context, req *epb.EventParame
 	event := models.Event{
 		TaskId:          req.TaskId,
 		Time:            eventTime,
-		Type:            req.Type,
+		Type:            req.Type.String(),
 		User:            req.User,
 		ApproversNumber: req.ApproversNumber,
 	}
