@@ -63,7 +63,10 @@ func Start(ctx context.Context) {
 func Stop() {
 	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdown()
-	_ = httpServer.Stop(ctx)
+	err := httpServer.Stop(ctx)
+	if err != nil {
+		logger.Sugar().Errorf("stop http server failed: %v", err)
+	}
 	grpcEventsReceiver.Stop()
 	logger.Sugar().Info("app has stopped")
 }
