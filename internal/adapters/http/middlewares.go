@@ -14,6 +14,7 @@ func (s *Server) ValidateAuth(next http.Handler) http.Handler {
 		if err != nil {
 			s.logger.Errorf("validate token failed: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		if !isAuthorized {

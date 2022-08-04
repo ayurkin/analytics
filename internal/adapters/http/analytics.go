@@ -78,6 +78,7 @@ func (s *Server) GetTaskTotalResponseTime(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		s.logger.Error("incorrect task id", err)
 		http.Error(w, "incorrect task id", http.StatusBadRequest)
+		return
 	}
 	ctx := context.WithValue(context.Background(), "request", r)
 	taskTotalResponseTime, err := s.analytics.GetTotalTaskResponseTime(ctx, int32(taskId))

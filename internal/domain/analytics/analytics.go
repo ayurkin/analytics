@@ -63,7 +63,7 @@ func (s *Service) GetTotalTaskResponseTime(ctx context.Context, taskId int32) (s
 }
 
 func (s *Service) GetApprovedTasksCount(ctx context.Context) (int32, error) {
-	approvedTaskCount, err := s.db.GetApprovedTasksCount(ctx)
+	approvedTaskCount, err := s.db.GetTasksCount(ctx, "approved")
 
 	if err != nil {
 		return -1, fmt.Errorf("get approved tasks count: %v", err)
@@ -72,7 +72,7 @@ func (s *Service) GetApprovedTasksCount(ctx context.Context) (int32, error) {
 }
 
 func (s *Service) GetRejectedTasksCount(ctx context.Context) (int32, error) {
-	approvedTaskCount, err := s.db.GetRejectedTasksCount(ctx)
+	approvedTaskCount, err := s.db.GetTasksCount(ctx, "rejected")
 
 	if err != nil {
 		return -1, fmt.Errorf("get rejected tasks count: %v", err)

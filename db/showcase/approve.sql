@@ -4,15 +4,16 @@ DELETE FROM analytics.event;
 -- clear table
 DELETE FROM analytics.task;
 
--- 1 write event
+-- 1 create task
+INSERT INTO analytics.task
+(id, status, created_at, last_mail_at, total_time, approvers_number, current_approvers_number)
+VALUES (123, 'created', '2022-02-02 15:00:00.000000 +00:00', null, '0 years 0 mons 0 days 0 hours 0 mins 0.0 secs', 2, 0);
+
+-- 2 write event
 INSERT INTO analytics.event
 (task_id, occurred_at, event_type, event_user, approvers_number)
 VALUES (123, '2022-02-02 15:00:00.000000 +00:00', 'create', 'author@mail.com', 2);
 
--- 2 create task
-INSERT INTO analytics.task
-(id, status, created_at, last_mail_at, total_time, approvers_number, current_approvers_number)
-VALUES (123, 'created', '2022-02-02 15:00:00.000000 +00:00', null, '0 years 0 mons 0 days 0 hours 0 mins 0.0 secs', 2, 0);
 
 -- 3  write event
 INSERT INTO analytics.event

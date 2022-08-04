@@ -10,7 +10,6 @@ type AnalyticsStoragePort interface {
 	AddMail(ctx context.Context, event models.Event) error
 	AddApproveClick(ctx context.Context, event models.Event) error
 	AddRejectClick(ctx context.Context, event models.Event) error
-	GetApprovedTasksCount(ctx context.Context) (int32, error)
-	GetRejectedTasksCount(ctx context.Context) (int32, error)
 	GetTotalTaskResponseTime(ctx context.Context, taskId int32) (string, error)
+	GetTasksCount(ctx context.Context, taskType string) (int32, error)
 }

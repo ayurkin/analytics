@@ -3,7 +3,6 @@ package postgres
 import (
 	"analytics/internal/domain/models"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/sanyokbig/pqinterval"
@@ -22,20 +21,21 @@ func (db *Database) CreateTask(ctx context.Context, event models.Event) error {
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
-		`INSERT INTO analytics.event
-				 (task_id, occurred_at, event_type, event_user, approvers_number)
-			 VALUES ($1, $2, $3, $4, $5)`,
-		event.TaskId, event.Time, event.Type, event.User, event.ApproversNumber)
-
-	if err != nil {
-		return fmt.Errorf("query exec failed: %v", err)
-	}
-	_, err = tx.Exec(ctx,
 		`INSERT INTO analytics.task
 				(id, status, created_at, last_mail_at, total_time, approvers_number, current_approvers_number)
 			VALUES
 				($1, 'created', $2, null, '0 years 0 mons 0 days 0 hours 0 mins 0.0 secs', $3, 0)`,
 		event.TaskId, event.Time, event.ApproversNumber)
+	if err != nil {
+		return fmt.Errorf("query exec failed: %v", err)
+	}
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO analytics.event
+				 (task_id, occurred_at, event_type, event_user, approvers_number)
+			 VALUES ($1, $2, $3, $4, $5)`,
+		event.TaskId, event.Time, event.Type, event.User, event.ApproversNumber)
+
 	if err != nil {
 		return fmt.Errorf("query exec failed: %v", err)
 	}
@@ -155,18 +155,9 @@ func (db *Database) GetTotalTaskResponseTime(ctx context.Context, taskId int32) 
 	var ival pqinterval.Interval
 	var totalTaskResponseTime string
 
-	rows, err := db.DB.Query(ctx, "SELECT total_time FROM analytics.task WHERE task.id = $1", taskId)
+	err := db.DB.QueryRow(ctx, "SELECT total_time FROM analytics.task WHERE task.id = $1", taskId).Scan(&ival)
 	if err != nil {
-		return "", fmt.Errorf("query exec failed: %v", err)
-	}
-
-	if !rows.Next() {
-		return "", errors.New(fmt.Sprintf("not found task %d", taskId))
-	}
-
-	err = rows.Scan(&ival)
-	if err != nil {
-		return "", fmt.Errorf("scan exec failed: %v", err)
+		return "", fmt.Errorf("query row failed: %v", err)
 	}
 
 	ivalValue, err := ival.Value()
@@ -177,43 +168,23 @@ func (db *Database) GetTotalTaskResponseTime(ctx context.Context, taskId int32) 
 	return totalTaskResponseTime, nil
 }
 
-func (db *Database) GetApprovedTasksCount(ctx context.Context) (int32, error) {
+func (db *Database) GetTasksCount(ctx context.Context, taskType string) (int32, error) {
 	var approvedTasksCount int32
+	var err error
 
-	rows, err := db.DB.Query(ctx, "SELECT count(id) FROM analytics.task WHERE status = 'approved'")
-	if err != nil {
-		return -1, fmt.Errorf("query exec failed: %v", err)
+	if taskType == "approved" {
+		err = db.DB.QueryRow(ctx,
+			"SELECT count(id) FROM analytics.task WHERE status = 'approved'").Scan(&approvedTasksCount)
+	} else if taskType == "rejected" {
+		err = db.DB.QueryRow(ctx,
+			"SELECT count(id) FROM analytics.task WHERE status = 'rejected'").Scan(&approvedTasksCount)
+	} else {
+		return 0, fmt.Errorf("get tasks count failed: %s taskType not appicable", taskType)
 	}
 
-	if !rows.Next() {
-		return -1, errors.New("not found approved tasks")
-	}
-
-	err = rows.Scan(&approvedTasksCount)
 	if err != nil {
-		return -1, fmt.Errorf("scan exec failed: %v", err)
+		return 0, fmt.Errorf("query row failed: %v", err)
 	}
 
 	return approvedTasksCount, nil
-}
-
-func (db *Database) GetRejectedTasksCount(ctx context.Context) (int32, error) {
-	var rejectedTasksCount int32
-
-	rows, err := db.DB.Query(ctx,
-		"SELECT count(id) FROM analytics.task WHERE status IN ('created', 'waiting_response', 'response_received', 'rejected')")
-	if err != nil {
-		return -1, fmt.Errorf("query exec failed: %v", err)
-	}
-
-	if !rows.Next() {
-		return -1, errors.New("not found rejected tasks")
-	}
-
-	err = rows.Scan(&rejectedTasksCount)
-	if err != nil {
-		return -1, fmt.Errorf("scan exec failed: %v", err)
-	}
-
-	return rejectedTasksCount, nil
 }
