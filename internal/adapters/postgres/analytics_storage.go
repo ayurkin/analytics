@@ -22,7 +22,7 @@ func (db *Database) CreateTask(ctx context.Context, event models.Event) error {
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
-		`INSERT INTO analytics.event_uuid (uuid) VALUES ($1)`,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
 		event.UUID)
 
 	if err != nil {
@@ -63,7 +63,7 @@ func (db *Database) AddMail(ctx context.Context, event models.Event) error {
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
-		`INSERT INTO analytics.event_uuid (uuid) VALUES ($1)`,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
 		event.UUID)
 
 	if err != nil {
@@ -105,7 +105,7 @@ func (db *Database) AddApproveClick(ctx context.Context, event models.Event) err
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
-		`INSERT INTO analytics.event_uuid (uuid) VALUES ($1)`,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
 		event.UUID)
 
 	if err != nil {
@@ -150,7 +150,7 @@ func (db *Database) AddRejectClick(ctx context.Context, event models.Event) erro
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
-		`INSERT INTO analytics.event_uuid (uuid) VALUES ($1)`,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
 		event.UUID)
 
 	if err != nil {
@@ -223,14 +223,17 @@ func (db *Database) GetTasksCount(ctx context.Context, taskType string) (int32, 
 }
 
 func (db *Database) CheckIdempotency(ctx context.Context, uuid uuid.UUID) (bool, error) {
-	rows, err := db.DB.Query(ctx,
-		"SELECT * FROM analytics.event_uuid WHERE uuid = $1", uuid)
+	var isExist bool
+
+	err := db.DB.QueryRow(ctx,
+		"SELECT EXISTS(SELECT id FROM analytics.event_uuid WHERE id = $1) AS exists", uuid).Scan(&isExist)
+
 	if err != nil {
-		return false, fmt.Errorf("query exec failed: %v", err)
+		return false, fmt.Errorf("query row failed: %v", err)
+	}
+	if isExist {
+		return false, nil
 	}
 
-	if !rows.Next() {
-		return true, nil
-	}
-	return false, nil
+	return true, nil
 }

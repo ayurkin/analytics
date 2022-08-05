@@ -12,16 +12,16 @@ import (
 	"time"
 )
 
-var (
+type App struct {
 	logger              *zap.Logger
 	quitCh              chan struct{}
 	kafkaEventsReceiver *events_receiver.Client
 	httpServer          *http.Server
-)
+}
 
-func Start(ctx context.Context) {
-	logger, _ = zap.NewProduction()
-
+func Start(ctx context.Context, app *App) {
+	logger, _ := zap.NewProduction()
+	app.logger = logger
 	pgconn := "postgresql://app:secret@localhost:5432/app?sslmode=disable"
 
 	db, err := postgres.New(ctx, pgconn)
@@ -39,16 +39,15 @@ func Start(ctx context.Context) {
 
 	authS := auth.New(authGrpcClient)
 
-	httpServer = http.New(analyticsS, authS, logger.Sugar())
+	app.httpServer = http.New(analyticsS, authS, logger.Sugar())
 
-	kafkaEventsReceiver = events_receiver.New(analyticsS, logger.Sugar())
+	app.kafkaEventsReceiver = events_receiver.New(analyticsS, logger.Sugar())
 
-	quitCh = make(chan struct{})
 	go func() {
-		kafkaEventsReceiver.Start(quitCh)
+		app.kafkaEventsReceiver.Start(ctx)
 	}()
 	go func() {
-		err := httpServer.Start()
+		err := app.httpServer.Start()
 		if err != nil {
 			logger.Sugar().Fatalf("http server failed: %v", err)
 		}
@@ -58,13 +57,14 @@ func Start(ctx context.Context) {
 
 }
 
-func Stop() {
-	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
-	defer shutdown()
-	err := httpServer.Stop(ctx)
+func Stop(app *App) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := app.httpServer.Stop(ctx)
 	if err != nil {
-		logger.Sugar().Errorf("stop http server failed: %v", err)
+		app.logger.Sugar().Errorf("stop http server failed: %v", err)
 	}
-	kafkaEventsReceiver.Stop(quitCh)
-	logger.Sugar().Info("app has stopped")
+	app.kafkaEventsReceiver.Stop()
+	app.logger.Sugar().Info("app has stopped")
 }

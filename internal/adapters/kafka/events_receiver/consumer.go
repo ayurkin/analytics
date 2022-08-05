@@ -5,6 +5,8 @@ import (
 	"analytics/internal/ports"
 	"context"
 	"encoding/json"
+	"errors"
+	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )
@@ -19,8 +21,8 @@ func New(analytics ports.AnalyticsPort, logger *zap.SugaredLogger) *Client {
 
 	c := Client{}
 	brokers := []string{"localhost:9092"}
-	topic := "test"
-	groupId := "test_group_id"
+	topic := "team3-topic-analytics"
+	groupId := "analytics_group"
 
 	c.Reader = kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  brokers,
@@ -34,38 +36,40 @@ func New(analytics ports.AnalyticsPort, logger *zap.SugaredLogger) *Client {
 	return &c
 }
 
-func (c *Client) Start(quit chan struct{}) {
+func (c *Client) Start(ctx context.Context) {
 
 	for {
-		err := c.fetchProcessCommit()
+		msg, err := c.Reader.FetchMessage(ctx)
 		if err != nil {
-			c.logger.Errorf("kafka fetch process commit failed: %v", err)
+			if errors.Is(err, context.Canceled) {
+				c.logger.Infof("kafka reader stopped by context: %v", err)
+
+				return
+			}
+
+			c.logger.Infof("kafka reader failed: %v", err)
+
+			continue
 		}
-		select {
-		case <-quit:
-			return
-		default:
+		c.logger.Infof("fetched message: %v value: %s, ofset: %v", msg.Key, msg.Value, msg.Offset)
+		err = c.fetchProcessCommit(ctx, msg)
+		if err != nil {
+			c.logger.Errorf("fetch process commit failed: %v", err)
 		}
+
 	}
 }
 
-func (c *Client) fetchProcessCommit() error {
-	ctx := context.Background()
-	msg, err := c.Reader.FetchMessage(ctx)
-	if err != nil {
-		c.logger.Fatalf("kafka reader failed to fetch message: %v", err)
-	}
-	c.logger.Infof("fetched message: %v value: %s, ofset: %v", msg.Key, msg.Value, msg.Offset)
-
+func (c *Client) fetchProcessCommit(ctx context.Context, msg kafka.Message) error {
 	var event models.Event
-	err = json.Unmarshal(msg.Value, &event)
+	err := json.Unmarshal(msg.Value, &event)
 	if err != nil {
 		c.logger.Errorf("kafka message unmarshall failed: %v, value: %s", err, msg.Value)
 		err = c.Reader.CommitMessages(ctx, msg)
 		return err
 	}
 
-	if event.UUID.String() == "00000000-0000-0000-0000-000000000000" {
+	if event.UUID == uuid.Nil {
 		c.logger.Errorf("incorrect event uuid: %s", event.UUID.String())
 		err = c.Reader.CommitMessages(ctx, msg)
 		return err
@@ -84,33 +88,29 @@ func (c *Client) fetchProcessCommit() error {
 
 	switch event.Type {
 	case "create":
-		err := c.analytics.CreateTask(ctx, event)
-		if err != nil {
-			return err
-		}
+		err = c.analytics.CreateTask(ctx, event)
 	case "send_mail":
-		err := c.analytics.AddMail(ctx, event)
-		if err != nil {
-			return err
-		}
+		err = c.analytics.AddMail(ctx, event)
 	case "approve":
-		err := c.analytics.AddApproveClick(ctx, event)
-		if err != nil {
-			return err
-		}
+		err = c.analytics.AddApproveClick(ctx, event)
 	case "reject":
-		err := c.analytics.AddRejectClick(ctx, event)
-		if err != nil {
-			return err
-		}
+		err = c.analytics.AddRejectClick(ctx, event)
 	default:
 		c.logger.Errorf("incorrect event type: %s", event.Type)
 	}
+	if err != nil {
+		return err
+	}
+
 	err = c.Reader.CommitMessages(ctx, msg)
 	return err
 
 }
 
-func (c *Client) Stop(quit chan struct{}) {
-	close(quit)
+func (c *Client) Stop() {
+	err := c.Reader.Close()
+	if err != nil {
+		c.logger.Errorf("kafka reader close failed: %v", err)
+	}
+	c.logger.Info("kafka reader closed")
 }

@@ -2,5 +2,5 @@
 
 CREATE TABLE IF NOT EXISTS analytics.event_uuid
 (
-    uuid uuid UNIQUE
+    id uuid UNIQUE
 );
