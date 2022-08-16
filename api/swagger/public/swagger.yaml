@@ -1,0 +1,90 @@
+basePath: /analytics/v1
+host: localhost:3000
+info:
+  contact: {}
+  title: Analytics microservice
+  version: 1.0.0
+paths:
+  /task/totalresponsetime:
+    get:
+      description: 'Get task total response time if access token is valid. Token format:
+        access=token'
+      operationId: GetTaskTotalResponseTime
+      parameters:
+      - description: Task ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get task total response time
+      tags:
+      - analytics
+  /tasks/approved:
+    get:
+      description: 'Get approved tasks count if access token is valid. Token format:
+        access=token'
+      operationId: GetApprovedTasksCount
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get approved tasks count
+      tags:
+      - analytics
+  /tasks/rejected:
+    get:
+      description: 'Get rejected tasks count if access token is valid. Token format:
+        access=token'
+      operationId: GetRejectedTasksCount
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get rejected tasks count
+      tags:
+      - analytics
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Cookie
+    type: apiKey
+swagger: "2.0"

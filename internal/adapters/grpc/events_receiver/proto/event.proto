@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package event_pb;
+
+option go_package = "./event_pb";
+
+service EventWriter {
+  rpc WriteEvent(EventParameters) returns (WriteStatus) {}
+}
+
+message EventParameters {
+  int32 taskId = 1;
+  string time = 2;
+  enum Type {
+    create = 0;
+    send_mail = 1;
+    approve = 2;
+    reject = 3;
+  }
+  Type type = 3;
+  string user = 4;
+  int32  approversNumber = 5;
+}
+
+message WriteStatus {
+  bool success = 1;
+}
