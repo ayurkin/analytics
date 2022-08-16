@@ -5,6 +5,7 @@ import (
 	"analytics/internal/ports"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -78,4 +79,13 @@ func (s *Service) GetRejectedTasksCount(ctx context.Context) (int32, error) {
 		return -1, fmt.Errorf("get rejected tasks count: %v", err)
 	}
 	return approvedTaskCount, nil
+}
+
+func (s *Service) CheckIdempotency(ctx context.Context, uuid uuid.UUID) (bool, error) {
+	isUUIDIdempotent, err := s.db.CheckIdempotency(ctx, uuid)
+
+	if err != nil {
+		return true, fmt.Errorf("check UUID idempotent failed: %v", err)
+	}
+	return isUUIDIdempotent, nil
 }

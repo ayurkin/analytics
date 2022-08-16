@@ -62,3 +62,17 @@ tests/integration/analytics/approve:
 
 tests/integration/analytics/reject:
 	go test -v -tags=reject ./internal/tests/
+
+up_local_environment:
+	docker compose up -d
+
+down_local_environment:
+	docker compose down
+
+start_analytics_microservice:
+	go run cmd/main.go
+
+send_create_task_event:
+	docker container exec -it kafka \
+	bash -c \
+	'echo "{\"uuid\":\"7c866871-620d-4ee8-b665-e577e9bd62f3\",\"task_id\":1,\"time\":\"2022-07-26T20:13:09.260560304Z\",\"type\":\"create\",\"user\":\"author@mail.ru\",\"approvers_number\":2}" | /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test'

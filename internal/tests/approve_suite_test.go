@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	_ "github.com/lib/pq"
@@ -110,6 +111,7 @@ func (suite *ApproveSuite) Test1CreateTask() {
 	suite.Require().NoError(err)
 
 	event := models.Event{
+		UUID:            uuid.New(),
 		TaskId:          1,
 		Time:            eventTime,
 		Type:            "create",
@@ -127,6 +129,7 @@ func (suite *ApproveSuite) Test2AddEmail1() {
 	suite.Require().NoError(err)
 
 	event := models.Event{
+		UUID:            uuid.New(),
 		TaskId:          1,
 		Time:            eventTime,
 		Type:            "send_mail",
@@ -144,6 +147,7 @@ func (suite *ApproveSuite) Test3AddApproveClick1() {
 	suite.Require().NoError(err)
 
 	event := models.Event{
+		UUID:            uuid.New(),
 		TaskId:          1,
 		Time:            eventTime,
 		Type:            "approve",
@@ -161,6 +165,7 @@ func (suite *ApproveSuite) Test4AddEmail2() {
 	suite.Require().NoError(err)
 
 	event := models.Event{
+		UUID:            uuid.New(),
 		TaskId:          1,
 		Time:            eventTime,
 		Type:            "send_mail",
@@ -178,6 +183,7 @@ func (suite *ApproveSuite) Test5AddApproveClick2() {
 	suite.Require().NoError(err)
 
 	event := models.Event{
+		UUID:            uuid.New(),
 		TaskId:          1,
 		Time:            eventTime,
 		Type:            "approve",

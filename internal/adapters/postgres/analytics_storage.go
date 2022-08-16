@@ -4,6 +4,7 @@ import (
 	"analytics/internal/domain/models"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/sanyokbig/pqinterval"
 	"time"
@@ -19,6 +20,14 @@ func (db *Database) CreateTask(ctx context.Context, event models.Event) error {
 		return fmt.Errorf("begin tx failed: %v", err)
 	}
 	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
+		event.UUID)
+
+	if err != nil {
+		return fmt.Errorf("query exec failed: %v", err)
+	}
 
 	_, err = tx.Exec(ctx,
 		`INSERT INTO analytics.task
@@ -54,6 +63,14 @@ func (db *Database) AddMail(ctx context.Context, event models.Event) error {
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
+		event.UUID)
+
+	if err != nil {
+		return fmt.Errorf("query exec failed: %v", err)
+	}
+
+	_, err = tx.Exec(ctx,
 		`INSERT INTO analytics.event
 				 (task_id, occurred_at, event_type, event_user, approvers_number)
 			 VALUES ($1, $2, $3, $4, $5)`,
@@ -86,6 +103,14 @@ func (db *Database) AddApproveClick(ctx context.Context, event models.Event) err
 		return fmt.Errorf("begin tx failed: %v", err)
 	}
 	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
+		event.UUID)
+
+	if err != nil {
+		return fmt.Errorf("query exec failed: %v", err)
+	}
 
 	_, err = tx.Exec(ctx,
 		`INSERT INTO analytics.event
@@ -123,6 +148,14 @@ func (db *Database) AddRejectClick(ctx context.Context, event models.Event) erro
 		return fmt.Errorf("begin tx failed: %v", err)
 	}
 	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO analytics.event_uuid (id) VALUES ($1)`,
+		event.UUID)
+
+	if err != nil {
+		return fmt.Errorf("query exec failed: %v", err)
+	}
 
 	_, err = tx.Exec(ctx,
 		`INSERT INTO analytics.event
@@ -187,4 +220,20 @@ func (db *Database) GetTasksCount(ctx context.Context, taskType string) (int32, 
 	}
 
 	return approvedTasksCount, nil
+}
+
+func (db *Database) CheckIdempotency(ctx context.Context, uuid uuid.UUID) (bool, error) {
+	var isExist bool
+
+	err := db.DB.QueryRow(ctx,
+		"SELECT EXISTS(SELECT id FROM analytics.event_uuid WHERE id = $1) AS exists", uuid).Scan(&isExist)
+
+	if err != nil {
+		return false, fmt.Errorf("query row failed: %v", err)
+	}
+	if isExist {
+		return false, nil
+	}
+
+	return true, nil
 }
